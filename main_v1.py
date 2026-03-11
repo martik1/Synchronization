@@ -6,9 +6,9 @@ from scipy.constants import c
 """
 custom imports
 """
-from synchronization.utility import Node, estimate_clock_offsets, estimate_clock_rates
-from synchronization.protocols import sbs_protocol
-from synchronization.plotting import plot_network
+from synchronization._01_utility import Node, estimate_clock_offsets, estimate_clock_rates
+from synchronization._02_protocols import sbs_protocol
+from synchronization._xx_plotting import plot_network
 
 if __name__ == "__main__":
     np.random.seed(333)
