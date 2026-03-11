@@ -6,9 +6,9 @@ from scipy.constants import c
 """
 custom imports
 """
-from synchronization._01_utility import Node, estimate_clock_offsets, estimate_clock_rates
-from synchronization._02_protocols import sbs_protocol
-from synchronization._xx_plotting import plot_network
+from _01_utility import Node, estimate_clock_offsets, estimate_clock_rates
+from _02_protocols import sbs_protocol
+from _xx_plotting import plot_network
 
 if __name__ == "__main__":
     np.random.seed(333)
@@ -55,4 +55,4 @@ if __name__ == "__main__":
             print(f"Nodes {i}-{j}: True={true_dist:.2f}m, Est={est_dist:.2f}m")
 
     # plot the situation
-    plot_network(network)
+    #plot_network(network)
