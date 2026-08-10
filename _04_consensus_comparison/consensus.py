@@ -10,6 +10,46 @@ circle correctly. Adversarial placements that straddle the 0/360 deg
 wraparound boundary are the case that separates the two.
 """
 import numpy as np
+from scipy.special import iv as bessel_iv
+
+
+def sample_vonmises_deg(mu_deg, kappa, n, rng):
+    """
+    n i.i.d. noisy phase measurements of a true phase `mu_deg`, drawn from a
+    von Mises distribution (the circular analogue of a Gaussian) with
+    concentration `kappa` (higher kappa = less noise; kappa -> 0 is uniform
+    noise over the whole circle, kappa large behaves like N(mu, 1/kappa)).
+    Returned in degrees, wrapped to [0, 360).
+    """
+    mu_rad = np.deg2rad(mu_deg)
+    samples_rad = rng.vonmises(mu_rad, kappa, size=n)
+    return np.rad2deg(samples_rad) % 360.0
+
+
+def von_mises_A1(kappa):
+    """A1(kappa) = I1(kappa) / I0(kappa), the mean resultant length of a
+    von Mises(., kappa) distribution -- also the factor in its Fisher
+    information."""
+    return bessel_iv(1, kappa) / bessel_iv(0, kappa)
+
+
+def crlb_deg2(n, kappa):
+    """
+    Cramer-Rao lower bound on the variance (in deg^2) of any unbiased
+    estimator of the mean direction mu from n i.i.d. von Mises(mu, kappa)
+    samples. Fisher information per sample is kappa * A1(kappa), so
+        Var(mu_hat) >= 1 / (n * kappa * A1(kappa))   [rad^2]
+    Independent of mu itself (the von Mises family is rotation-invariant).
+    """
+    info_per_sample = kappa * von_mises_A1(kappa)
+    var_rad2 = 1.0 / (n * info_per_sample)
+    return var_rad2 * (180.0 / np.pi) ** 2
+
+
+def linear_mean_estimator_deg(samples_deg):
+    """The value linear consensus converges to: the plain arithmetic mean
+    of the raw [0, 360) readings -- no wraparound awareness."""
+    return np.mean(samples_deg) % 360.0
 
 
 def circular_mean_deg(angles_deg):
@@ -23,6 +63,31 @@ def circular_error_deg(angles_deg, target_deg):
     """Smallest-signed-angle distance of each node's phase to a target, in deg."""
     diff = (angles_deg - target_deg + 180.0) % 360.0 - 180.0
     return diff
+
+
+def monte_carlo_trial_errors(mu_deg, kappa, n, trials, rng):
+    """
+    Vectorized Monte Carlo: draws `trials` independent experiments of n
+    von-Mises(mu_deg, kappa) noisy phase readings each, and returns the
+    per-trial signed circular error (deg) of the linear-consensus estimate
+    (raw arithmetic mean) and the circular-mean estimate (Kuramoto
+    consensus's fixed point, see run_comparison.py for the empirical
+    dynamics-vs-closed-form check) against the true mu_deg.
+    """
+    mu_rad = np.deg2rad(mu_deg)
+    samples_rad = rng.vonmises(mu_rad, kappa, size=(trials, n))
+    samples_deg = np.rad2deg(samples_rad) % 360.0
+
+    lin_est = samples_deg.mean(axis=1) % 360.0
+
+    rad = np.deg2rad(samples_deg)
+    circ_est = np.rad2deg(
+        np.arctan2(np.sin(rad).mean(axis=1), np.cos(rad).mean(axis=1))
+    ) % 360.0
+
+    lin_err = circular_error_deg(lin_est, mu_deg)
+    circ_err = circular_error_deg(circ_est, mu_deg)
+    return lin_err, circ_err
 
 
 def complete_graph_laplacian(n):

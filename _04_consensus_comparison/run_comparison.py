@@ -6,11 +6,14 @@ near 5 deg and 356 deg), and saves the report figures to ./plots/.
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+import scienceplots  # noqa: F401
 
 from consensus import (
     make_adversarial_phases, circular_mean_deg, circular_error_deg,
     run_linear_consensus, run_kuramoto_consensus, kuramoto_order_parameter,
 )
+
+plt.style.use(["science", "no-latex"])
 
 # ---- palette (validated categorical set, light-surface values) ----
 BLUE = "#2a78d6"     # linear consensus
